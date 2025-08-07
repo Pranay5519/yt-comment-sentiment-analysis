@@ -22,7 +22,7 @@ var/
 *.egg-info/
 .installed.cfg
 *.egg
-
+myenv/
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
@@ -87,3 +87,6 @@ target/
 
 # Mypy cache
 .mypy_cache/
+/lgbm_model.pkl
+/tfidf_vectorizer.pkl
+/experiment_info.json
