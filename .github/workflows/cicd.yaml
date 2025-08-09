@@ -35,8 +35,9 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: us-east-1
         run: |
-          nohup python flask_app/app.py & 
+          nohup python flask_app/app.py &
+          sleep 5  # wait for the server to start
 
       - name: Run Flask API tests
         run: |
-          pytest scripts/test_flask_api.py
+          pytest scripts/test_flask_api.py -v
