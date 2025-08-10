@@ -17,11 +17,7 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 from mlflow.tracking import MlflowClient
 import matplotlib.dates as mdates
-import dagshub
-import os
-# Set up DagsHub credentials for MLflow tracking
-from dotenv import load_dotenv
-load_dotenv()
+
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
@@ -56,19 +52,8 @@ def preprocess_comment(comment):
 
 # Load the model and vectorizer from the model registry and local storage
 def load_model_and_vectorizer(model_name, model_version, vectorizer_path):
-    dagshub_token = os.getenv("DAGSHUB_PAT")
-    if not dagshub_token:
-        raise EnvironmentError("DAGSHUB_PAT environment variable is not set")
-
-    os.environ["MLFLOW_TRACKING_USERNAME"] = dagshub_token
-    os.environ["MLFLOW_TRACKING_PASSWORD"] = dagshub_token
-
-    dagshub_url = "https://dagshub.com"
-    repo_owner = "Pranay5519"
-    repo_name = "yt-comment-sentiment-analysis"
-
-    # Set up MLflow tracking URI
-    mlflow.set_tracking_uri(f'{dagshub_url}/{repo_owner}/{repo_name}.mlflow')
+    # Set MLflow tracking URI to your server
+    mlflow.set_tracking_uri("http://ec2-54-159-169-196.compute-1.amazonaws.com:5000/")  # Replace with your MLflow tracking URI
     client = MlflowClient()
     model_uri = f"models:/{model_name}/{model_version}"
     model = mlflow.pyfunc.load_model(model_uri)
@@ -90,40 +75,27 @@ def predict_with_timestamps():
         comments = [item['text'] for item in comments_data]
         timestamps = [item['timestamp'] for item in comments_data]
 
-        # Preprocess comments
+        # Preprocess each comment before vectorizing
         preprocessed_comments = [preprocess_comment(comment) for comment in comments]
         
-        # Vectorize comments (sparse matrix)
+        # Transform comments using the vectorizer
+        # Transform comments using the vectorizer
         transformed_comments = vectorizer.transform(preprocessed_comments)
 
-        # Get expected schema columns from MLflow model
-        input_schema = model.metadata.get_input_schema()
-        expected_columns = input_schema.input_names()
-
-        # Convert sparse matrix to DataFrame with vectorizer features
+        # Convert sparse matrix to DataFrame with feature names (same as in /predict)
         feature_names = vectorizer.get_feature_names_out()
-        df = pd.DataFrame(transformed_comments.toarray(), columns=feature_names)
+        transformed_df = pd.DataFrame(transformed_comments.toarray(), columns=feature_names)
 
-        # Add missing expected columns with zeros
-        for col in expected_columns:
-            if col not in df.columns:
-                df[col] = 0.0
-
-        # Reorder columns exactly as model expects
-        df = df[expected_columns]
-
-        # Predict
-        predictions = model.predict(df).tolist()
-
-        # Convert predictions to strings
+        # Make predictions
+        predictions = model.predict(transformed_df).tolist()
+        
+        # Convert predictions to strings for consistency
         predictions = [str(pred) for pred in predictions]
-
     except Exception as e:
         return jsonify({"error": f"Prediction failed: {str(e)}"}), 500
-
-    # Return results
-    response = [{"comment": comment, "sentiment": sentiment, "timestamp": timestamp} 
-                for comment, sentiment, timestamp in zip(comments, predictions, timestamps)]
+    
+    # Return the response with original comments, predicted sentiments, and timestamps
+    response = [{"comment": comment, "sentiment": sentiment, "timestamp": timestamp} for comment, sentiment, timestamp in zip(comments, predictions, timestamps)]
     return jsonify(response)
 
 @app.route('/predict', methods=['POST'])
@@ -135,41 +107,27 @@ def predict():
         return jsonify({"error": "No comments provided"}), 400
 
     try:
-        # Preprocess comments
+        # Preprocess each comment before vectorizing
         preprocessed_comments = [preprocess_comment(comment) for comment in comments]
         
-        # Vectorize comments (sparse matrix)
+        # Transform comments using the vectorizer
+        # Transform comments using the vectorizer
         transformed_comments = vectorizer.transform(preprocessed_comments)
 
-        # Get expected schema columns from MLflow model
-        input_schema = model.metadata.get_input_schema()
-        expected_columns = input_schema.input_names()
-
-        # Convert sparse matrix to DataFrame with vectorizer features
+        # Convert sparse matrix to DataFrame with feature names
         feature_names = vectorizer.get_feature_names_out()
-        df = pd.DataFrame(transformed_comments.toarray(), columns=feature_names)
-
-        # Add missing expected columns with zeros
-        for col in expected_columns:
-            if col not in df.columns:
-                df[col] = 0.0
-
-        # Reorder columns exactly as model expects
-        df = df[expected_columns]
+        transformed_df = pd.DataFrame(transformed_comments.toarray(), columns=feature_names)
 
         # Make predictions
-        predictions = model.predict(df).tolist()
-
-        # Convert predictions to strings
+        predictions = model.predict(transformed_df).tolist()
+        # Convert predictions to strings for consistency
         predictions = [str(pred) for pred in predictions]
-
     except Exception as e:
         return jsonify({"error": f"Prediction failed: {str(e)}"}), 500
-
-    # Return response
+    
+    # Return the response with original comments and predicted sentiments
     response = [{"comment": comment, "sentiment": sentiment} for comment, sentiment in zip(comments, predictions)]
     return jsonify(response)
-
 
 @app.route('/generate_chart', methods=['POST'])
 def generate_chart():

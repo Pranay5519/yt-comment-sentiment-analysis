@@ -52,17 +52,8 @@ def test_generate_trend_graph_endpoint():
     assert response.headers["Content-Type"] == "image/png"
     
 if __name__ == "__main__":
-    for test_func in [
-        test_predict_endpoint,
-        test_predict_with_timestamps_endpoint,
-        test_generate_chart_endpoint,
-        test_generate_wordcloud_endpoint,
-        test_generate_trend_graph_endpoint,
-    ]:
-        try:
-            test_func()
-            print(f"{test_func.__name__} PASSED")
-        except AssertionError as e:
-            print(f"{test_func.__name__} FAILED: {e}")
-        except Exception as e:
-            print(f"{test_func.__name__} ERROR: {e}")
+    test_predict_endpoint()
+    test_predict_with_timestamps_endpoint()
+    test_generate_chart_endpoint()
+    test_generate_wordcloud_endpoint()
+    test_generate_trend_graph_endpoint()

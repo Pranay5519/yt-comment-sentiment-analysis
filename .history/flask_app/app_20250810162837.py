@@ -78,6 +78,7 @@ def load_model_and_vectorizer(model_name, model_version, vectorizer_path):
 # Initialize the model and vectorizer
 model, vectorizer = load_model_and_vectorizer("yt_chrome_plugin_model", "2", "./tfidf_vectorizer.pkl")  # Update paths and versions as needed
 
+
 @app.route('/predict_with_timestamps', methods=['POST'])
 def predict_with_timestamps():
     data = request.json
@@ -90,41 +91,25 @@ def predict_with_timestamps():
         comments = [item['text'] for item in comments_data]
         timestamps = [item['timestamp'] for item in comments_data]
 
-        # Preprocess comments
+        # Preprocess each comment before vectorizing
         preprocessed_comments = [preprocess_comment(comment) for comment in comments]
         
-        # Vectorize comments (sparse matrix)
+        # Transform comments using the vectorizer (sparse matrix)
         transformed_comments = vectorizer.transform(preprocessed_comments)
 
-        # Get expected schema columns from MLflow model
-        input_schema = model.metadata.get_input_schema()
-        expected_columns = input_schema.input_names()
-
-        # Convert sparse matrix to DataFrame with vectorizer features
-        feature_names = vectorizer.get_feature_names_out()
-        df = pd.DataFrame(transformed_comments.toarray(), columns=feature_names)
-
-        # Add missing expected columns with zeros
-        for col in expected_columns:
-            if col not in df.columns:
-                df[col] = 0.0
-
-        # Reorder columns exactly as model expects
-        df = df[expected_columns]
-
-        # Predict
-        predictions = model.predict(df).tolist()
-
-        # Convert predictions to strings
+        # Predict directly on sparse matrix to avoid schema mismatch
+        predictions = model.predict(transformed_comments).tolist()
+        
+        # Convert predictions to strings for consistency
         predictions = [str(pred) for pred in predictions]
 
     except Exception as e:
         return jsonify({"error": f"Prediction failed: {str(e)}"}), 500
-
-    # Return results
-    response = [{"comment": comment, "sentiment": sentiment, "timestamp": timestamp} 
-                for comment, sentiment, timestamp in zip(comments, predictions, timestamps)]
+    
+    # Return the response with original comments, predicted sentiments, and timestamps
+    response = [{"comment": comment, "sentiment": sentiment, "timestamp": timestamp} for comment, sentiment, timestamp in zip(comments, predictions, timestamps)]
     return jsonify(response)
+
 
 @app.route('/predict', methods=['POST'])
 def predict():
@@ -135,41 +120,27 @@ def predict():
         return jsonify({"error": "No comments provided"}), 400
 
     try:
-        # Preprocess comments
+        # Preprocess each comment before vectorizing
         preprocessed_comments = [preprocess_comment(comment) for comment in comments]
         
-        # Vectorize comments (sparse matrix)
+        # Transform comments using the vectorizer
+        # Transform comments using the vectorizer
         transformed_comments = vectorizer.transform(preprocessed_comments)
 
-        # Get expected schema columns from MLflow model
-        input_schema = model.metadata.get_input_schema()
-        expected_columns = input_schema.input_names()
-
-        # Convert sparse matrix to DataFrame with vectorizer features
+        # Convert sparse matrix to DataFrame with feature names
         feature_names = vectorizer.get_feature_names_out()
-        df = pd.DataFrame(transformed_comments.toarray(), columns=feature_names)
-
-        # Add missing expected columns with zeros
-        for col in expected_columns:
-            if col not in df.columns:
-                df[col] = 0.0
-
-        # Reorder columns exactly as model expects
-        df = df[expected_columns]
+        transformed_df = pd.DataFrame(transformed_comments.toarray(), columns=feature_names)
 
         # Make predictions
-        predictions = model.predict(df).tolist()
-
-        # Convert predictions to strings
+        predictions = model.predict(transformed_df).tolist()
+        # Convert predictions to strings for consistency
         predictions = [str(pred) for pred in predictions]
-
     except Exception as e:
         return jsonify({"error": f"Prediction failed: {str(e)}"}), 500
-
-    # Return response
+    
+    # Return the response with original comments and predicted sentiments
     response = [{"comment": comment, "sentiment": sentiment} for comment, sentiment in zip(comments, predictions)]
     return jsonify(response)
-
 
 @app.route('/generate_chart', methods=['POST'])
 def generate_chart():
