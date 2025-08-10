@@ -4,9 +4,12 @@ import json
 import mlflow
 import logging
 import os
-
+from dotenv import load_dotenv
+import dagshub
+load_dotenv()
 # Set up MLflow tracking URI
-mlflow.set_tracking_uri("http://ec2-54-159-169-196.compute-1.amazonaws.com:5000/")
+dagshub.init(repo_owner='Pranay5519', repo_name='yt-comment-sentiment-analysis', mlflow=True)
+mlflow.set_tracking_uri("https://dagshub.com/Pranay5519/yt-comment-sentiment-analysis.mlflow")
 
 
 # logging configuration

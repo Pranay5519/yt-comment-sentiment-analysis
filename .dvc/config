@@ -1,4 +1,6 @@
 [core]
-    remote = myremote
+    remote = localremote
 ['remote "myremote"']
     url = s3://yt-comment-dvc-bucket-psg
+['remote "localremote"']
+    url = C:\Users\prana\Desktop\PROJECTS\project-temp

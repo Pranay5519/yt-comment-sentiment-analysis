@@ -12,6 +12,12 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import json
 from mlflow.models import infer_signature
+import dagshub
+from dotenv import load_dotenv
+load_dotenv()
+# Set up MLflow tracking URI
+dagshub.init(repo_owner='Pranay5519', repo_name='yt-comment-sentiment-analysis', mlflow=True)
+
 
 # logging configuration
 logger = logging.getLogger('model_evaluation')
@@ -127,7 +133,7 @@ def save_model_info(run_id: str, model_path: str, file_path: str) -> None:
 
 
 def main():
-    mlflow.set_tracking_uri("http://ec2-54-159-169-196.compute-1.amazonaws.com:5000/")
+    mlflow.set_tracking_uri("https://dagshub.com/Pranay5519/yt-comment-sentiment-analysis.mlflow")
 
     mlflow.set_experiment('dvc-pipeline-runs')
     
