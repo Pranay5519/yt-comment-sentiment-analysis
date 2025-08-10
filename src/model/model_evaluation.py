@@ -13,10 +13,23 @@ import seaborn as sns
 import json
 from mlflow.models import infer_signature
 import dagshub
+# Set up DagsHub credentials for MLflow tracking
 from dotenv import load_dotenv
 load_dotenv()
+# Set up DagsHub credentials for MLflow tracking
+dagshub_token = os.getenv("DAGSHUB_PAT")
+if not dagshub_token:
+    raise EnvironmentError("DAGSHUB_PAT environment variable is not set")
+
+os.environ["MLFLOW_TRACKING_USERNAME"] = dagshub_token
+os.environ["MLFLOW_TRACKING_PASSWORD"] = dagshub_token
+
+dagshub_url = "https://dagshub.com"
+repo_owner = "Pranay5519"
+repo_name = "mlops-mini-project"
+
 # Set up MLflow tracking URI
-dagshub.init(repo_owner='Pranay5519', repo_name='yt-comment-sentiment-analysis', mlflow=True)
+mlflow.set_tracking_uri(f'{dagshub_url}/{repo_owner}/{repo_name}.mlflow')
 
 
 # logging configuration
