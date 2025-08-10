@@ -3,9 +3,26 @@ import pytest
 import pandas as pd
 import pickle
 from mlflow.tracking import MlflowClient
+import os
+import dagshub
+# Set up DagsHub credentials for MLflow tracking
+from dotenv import load_dotenv
+load_dotenv()
+# Set up DagsHub credentials for MLflow tracking
+dagshub_token = os.getenv("DAGSHUB_PAT")
+if not dagshub_token:
+    raise EnvironmentError("DAGSHUB_PAT environment variable is not set")
 
-# Set your remote tracking URI
-mlflow.set_tracking_uri("http://ec2-54-159-169-196.compute-1.amazonaws.com:5000/")
+os.environ["MLFLOW_TRACKING_USERNAME"] = dagshub_token
+os.environ["MLFLOW_TRACKING_PASSWORD"] = dagshub_token
+
+dagshub_url = "https://dagshub.com"
+repo_owner = "Pranay5519"
+repo_name = "yt-comment-sentiment-analysis"
+
+# Set up MLflow tracking URI
+mlflow.set_tracking_uri(f'{dagshub_url}/{repo_owner}/{repo_name}.mlflow')
+
 
 @pytest.mark.parametrize("model_name, stage, vectorizer_path", [
     ("yt_chrome_plugin_model", "staging", "tfidf_vectorizer.pkl"),  # Replace with your actual model name and vectorizer path

@@ -1,9 +1,27 @@
 import os
 import mlflow
-
+import os
+import dagshub
+# Set up DagsHub credentials for MLflow tracking
+from dotenv import load_dotenv
+load_dotenv()
 def promote_model():
     # Set up AWS MLflow tracking URI
-    mlflow.set_tracking_uri("http://ec2-54-159-169-196.compute-1.amazonaws.com:5000/")
+
+    # Set up DagsHub credentials for MLflow tracking
+    dagshub_token = os.getenv("DAGSHUB_PAT")
+    if not dagshub_token:
+        raise EnvironmentError("DAGSHUB_PAT environment variable is not set")
+
+    os.environ["MLFLOW_TRACKING_USERNAME"] = dagshub_token
+    os.environ["MLFLOW_TRACKING_PASSWORD"] = dagshub_token
+
+    dagshub_url = "https://dagshub.com"
+    repo_owner = "Pranay5519"
+    repo_name = "yt-comment-sentiment-analysis"
+
+    # Set up MLflow tracking URI
+    mlflow.set_tracking_uri(f'{dagshub_url}/{repo_owner}/{repo_name}.mlflow')
 
     client = mlflow.MlflowClient()
 
