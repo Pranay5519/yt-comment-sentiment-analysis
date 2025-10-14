@@ -148,7 +148,7 @@ def save_model_info(run_id: str, model_path: str, file_path: str) -> None:
 def main():
     mlflow.set_tracking_uri("https://dagshub.com/Pranay5519/yt-comment-sentiment-analysis.mlflow")
 
-    mlflow.set_experiment('dvc-pipeline-runs')
+    mlflow.set_experiment('dvc-pipeline-runs-2')
     
     with mlflow.start_run() as run:
         try:
